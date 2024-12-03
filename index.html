@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Textile Graphic Application</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+        }
+
+        .container {
+            display: flex;
+            width: 90%;
+            height: 90vh;
+            border-radius: 20px;
+            background-color: #fff;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+.sidebar {
+            width: 20%;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #eaeaea;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar ul {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 5px;
+            height: calc(100% - 50px); /* Account for header */
+        }
+
+        .main {
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .patterns {
+            width: 20%;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-left: 1px solid #eaeaea;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h3 {
+            text-align: center;
+            margin: 0 0 25px 0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e1e8ed;
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 600;
+            position: relative;
+        }
+
+        h3::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 2px;
+            background-color: #3498db;
+        }
+
+        .patterns ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .patterns li {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+.patterns li:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .patterns li.selected {
+            border: 2px solid #2196F3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+.cursor-fill {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="%232196F3" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34c-.39-.39-1.02-.39-1.41 0L9 12.25 11.75 15l8.96-8.96c.39-.39.39-1.02 0-1.41z"/></svg>') 0 24, auto;
+        }
+
+        .tool-active {
+            background-color: #E3F2FD !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 25px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 1;}
+            to {bottom: 0; opacity: 0;}
+        }
+
+        .patterns img {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            margin-right: 10px;
+            object-fit: cover;
+            border: 1px solid #eaeaea;
+        }
+
+        .patterns span {
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .upload-placeholder {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            margin: 20px;
+            background: #f8f9fa;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+        }
+
+        .upload-placeholder i {
+            font-size: 48px;
+            color: #2196F3;
+            margin-bottom: 15px;
+        }
+
+        .upload-placeholder p {
+            font-size: 1.1em;
+            margin: 10px 0;
+        }
+
+        canvas {
+            max-width: 90%;
+            max-height: 70vh;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            display: none;
+            background: white;
+        }
+
+.tool-icon {
+            font-size: 20px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 6px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-icon { color: #2196F3; background: #E3F2FD; }
+        .outline-icon { color: #4CAF50; background: #E8F5E9; }
+        .save-icon { color: #9C27B0; background: #F3E5F5; }
+        .undo-icon { color: #FF9800; background: #FFF3E0; }
+        .redo-icon { color: #3F51B5; background: #E8EAF6; }
+        .delete-icon { color: #F44336; background: #FFEBEE; }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+.sidebar li {
+            text-align: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            list-style-type: none;
+            transition: all 0.3s ease;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar span {
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .sidebar li:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+.sidebar span {
+            display: block;
+            color: #4a5568;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 6px;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        /* Scrollbar styling */
+        .patterns ul::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .patterns ul::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .patterns ul::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .patterns ul::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h3>Tools</h3>
+            <ul>
+                <li onclick="document.getElementById('file-input').click()">
+                    <div class="tool-icon upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <span>Upload</span>
+                </li>
+<li onclick="toggleOutline()">
+                    <div class="tool-icon outline-icon">
+                        <i class="fas fa-pencil-alt"></i>
+                    </div>
+                    <span>Sketch Outline</span>
+                </li>
+                <li onclick="toggleFillTool()" id="fillToolBtn">
+                    <div class="tool-icon outline-icon">
+                        <i class="fas fa-fill-drip"></i>
+                    </div>
+                    <span>Pattern Fill</span>
+                </li>
+                <li onclick="saveImage()">
+                    <div class="tool-icon save-icon">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <span>Save</span>
+                </li>
+<li onclick="undoAction()">
+                    <div class="tool-icon undo-icon">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                    <span>Undo</span>
+                </li>
+                <li onclick="redoAction()">
+                    <div class="tool-icon redo-icon">
+                        <i class="fas fa-redo"></i>
+                    </div>
+                    <span>Redo</span>
+                </li>
+<li onclick="deleteImage()">
+                    <div class="tool-icon delete-icon">
+                        <i class="fas fa-trash-alt"></i>
+                    </div>
+                    <span>Delete</span>
+                </li>
+            </ul>
+        </div>
+        <div class="main">
+            <div class="upload-placeholder">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>No image uploaded</p>
+                <p>Click Upload button or drag & drop image here</p>
+            </div>
+            <canvas id="canvas"></canvas>
+            <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(event)"/>
+        </div>
+        <div class="patterns">
+            <h3>Patterns</h3>
+<ul id="patternList">
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/A5YCTgvYlBKiCdfon357k1yOAWcHW0W56rNNAHJ9PwQTHK6JA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/A5YCTgvYlBKiCdfon357k1yOAWcHW0W56rNNAHJ9PwQTHK6JA.jpg" alt="Pattern 1"/><span>Pattern 1</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/rXSgOoGVw9IBNtDzNU0obYTIXqA7m17DiPfEt7sgBIwZHK6JA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/rXSgOoGVw9IBNtDzNU0obYTIXqA7m17DiPfEt7sgBIwZHK6JA.jpg" alt="Pattern 2"/><span>Pattern 2</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/GplnVZWzncIIDlcbEemCp6ichLbpwKR9rVnG6SpeMdfSdoonA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/GplnVZWzncIIDlcbEemCp6ichLbpwKR9rVnG6SpeMdfSdoonA.jpg" alt="Pattern 3"/><span>Pattern 3</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/thSZDjLfZdWAD6mcGWfeytggquCVoiqxyyX83UEphiGQdoonA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/thSZDjLfZdWAD6mcGWfeytggquCVoiqxyyX83UEphiGQdoonA.jpg" alt="Pattern 4"/><span>Pattern 4</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/uaW42zCDXa4NGRlaERh9zdVjVFXGbjQUefUsGMSjemzLdoonA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/uaW42zCDXa4NGRlaERh9zdVjVFXGbjQUefUsGMSjemzLdoonA.jpg" alt="Pattern 5"/><span>Pattern 5</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/ogY1lelxwVUGMycfkwEJel8pP4uZDRDUFm1hLC4NC01gdoonA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/ogY1lelxwVUGMycfkwEJel8pP4uZDRDUFm1hLC4NC01gdoonA.jpg" alt="Pattern 6"/><span>Pattern 6</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/deBjK4LVzHR9Iy1VtP3wpTycLdYDQTI6fWij2jYp9sTxOU0TA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/deBjK4LVzHR9Iy1VtP3wpTycLdYDQTI6fWij2jYp9sTxOU0TA.jpg" alt="Pattern 7"/><span>Pattern 7</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/LEe1iU6X46S0QSyRxXKJ9oO6NE0jsremwt0nzYWj3ULrOU0TA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/LEe1iU6X46S0QSyRxXKJ9oO6NE0jsremwt0nzYWj3ULrOU0TA.jpg" alt="Pattern 8"/><span>Pattern 8</span></li>
+                <li onclick="selectPattern(this, 'https://storage.googleapis.com/a1aa/image/y34mGdYxK8JaEhqfv3C1dtDy3dpe0rzsrrwwi11q2si2OU0TA.jpg')"><img src="https://storage.googleapis.com/a1aa/image/y34mGdYxK8JaEhqfv3C1dtDy3dpe0rzsrrwwi11q2si2OU0TA.jpg" alt="Pattern 9"/><span>Pattern 9</span></li>
+            </ul>
+        </div>
+</div>
+    <div id="toast"></div>
+
+    <script>
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'show';
+            setTimeout(() => toast.className = '', 3000);
+        }
+        // Previous script content remains exactly the same
+const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+let originalImage = null;
+        let isBlackAndWhite = false;
+        let selectedPattern = null;
+        let isFillToolActive = false;
+        let undoStack = [];
+        let redoStack = [];
+
+        // Save current state for undo
+        function saveState() {
+            undoStack.push(canvas.toDataURL());
+            redoStack = []; // Clear redo stack when new action is performed
+        }
+
+function undoAction() {
+            if (!originalImage) {
+                showToast('No actions to undo');
+                return;
+            }
+            if (undoStack.length > 0) {
+                redoStack.push(canvas.toDataURL());
+                const previousState = undoStack.pop();
+                loadState(previousState);
+                showToast('Action undone');
+            } else {
+                showToast('Nothing to undo');
+            }
+        }
+
+        function redoAction() {
+            if (!originalImage) {
+                showToast('No actions to redo');
+                return;
+            }
+            if (redoStack.length > 0) {
+                undoStack.push(canvas.toDataURL());
+                const nextState = redoStack.pop();
+                loadState(nextState);
+                showToast('Action redone');
+            } else {
+                showToast('Nothing to redo');
+            }
+        }
+
+        function loadState(state) {
+            const img = new Image();
+            img.onload = function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.onerror = function() {
+                showToast('Error loading previous state');
+            };
+            img.src = state;
+        }
+
+function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select a valid image file');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImage = new Image();
+                originalImage.onload = function() {
+                    // Save current state before loading new image
+                    saveState();
+                    
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    // Fill white background first
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    // Then draw the image
+                    ctx.drawImage(originalImage, 0, 0);
+                    canvas.style.display = 'block';
+                    document.querySelector('.upload-placeholder').style.display = 'none';
+                    isBlackAndWhite = false;
+                    
+                    showToast('Image uploaded successfully! You can now use the tools');
+                };
+                originalImage.onerror = function() {
+                    showToast('Failed to load image. Please try again');
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.onerror = function() {
+                showToast('Error reading file. Please try again');
+            };
+            reader.readAsDataURL(file);
+        }
+
+function toggleOutline() {
+            if (!originalImage) {
+                showToast('Please upload an image first');
+                return;
+            }
+
+            // Save current state before applying outline effect
+            saveState();
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            try {
+                if (isBlackAndWhite) {
+                    // Fill white background first
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    // Then draw the original image
+                    ctx.drawImage(originalImage, 0, 0);
+                    showToast('Original image restored');
+                } else {
+                    // Fill white background first
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        if (avg < 50) {
+                            data[i] = data[i + 1] = data[i + 2] = 0;
+                        } else {
+                            data[i] = data[i + 1] = data[i + 2] = 255;
+                        }
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                    showToast('Outline effect applied');
+                }
+                isBlackAndWhite = !isBlackAndWhite;
+            } catch (error) {
+                console.error('Error applying outline effect:', error);
+                showToast('Error applying outline effect. Please try again');
+            }
+        }
+
+function selectPattern(element, patternUrl) {
+            if (!originalImage) {
+                showToast('Please upload an image first');
+                return;
+            }
+            // Remove selected class from all patterns
+            document.querySelectorAll('.patterns li').forEach(li => li.classList.remove('selected'));
+            // Add selected class to clicked pattern
+            element.classList.add('selected');
+            
+            // Load the pattern image
+            const patternImg = new Image();
+            patternImg.onload = function() {
+                selectedPattern = patternImg;
+                showToast('Pattern selected! Use the Pattern Fill tool to apply it');
+            };
+            patternImg.onerror = function() {
+                showToast('Failed to load pattern. Please try another one');
+            };
+            patternImg.src = patternUrl;
+        }
+
+        function toggleFillTool() {
+            if (!originalImage) {
+                showToast('Please upload an image first');
+                return;
+            }
+            if (!selectedPattern) {
+                showToast('Please select a pattern first');
+                return;
+            }
+            
+            isFillToolActive = !isFillToolActive;
+            const fillToolBtn = document.getElementById('fillToolBtn');
+            canvas.classList.toggle('cursor-fill');
+            fillToolBtn.classList.toggle('tool-active');
+            
+            if (isFillToolActive) {
+                showToast('Pattern Fill tool activated. Click on an area to fill it');
+            } else {
+                showToast('Pattern Fill tool deactivated. Select a new pattern to continue filling');
+            }
+        }
+
+function floodFill(startX, startY) {
+            if (!selectedPattern || !isFillToolActive) {
+                showToast('Please select a pattern and activate the fill tool');
+                return;
+            }
+
+            // Save current state before filling
+            saveState();
+            showToast('Filling area with pattern...');
+
+            // Create a temporary canvas to store original image data
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            
+            // Draw the original black and white image
+            if (!isBlackAndWhite) {
+                // Convert to black and white first
+                tempCtx.drawImage(originalImage, 0, 0);
+                const tempImageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
+                const tempData = tempImageData.data;
+                for (let i = 0; i < tempData.length; i += 4) {
+                    const avg = (tempData[i] + tempData[i + 1] + tempData[i + 2]) / 3;
+                    tempData[i] = tempData[i + 1] = tempData[i + 2] = avg < 50 ? 0 : 255;
+                }
+                tempCtx.putImageData(tempImageData, 0, 0);
+            } else {
+                tempCtx.drawImage(canvas, 0, 0);
+            }
+            
+// Get the current canvas state for comparison
+            const currentState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const currentPixels = currentState.data;
+            
+            // Get color from the black and white version for filling
+            const originalPixels = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const startPos = (startY * canvas.width + startX) * 4;
+            const startR = currentPixels[startPos];
+            const startG = currentPixels[startPos + 1];
+            const startB = currentPixels[startPos + 2];
+            
+            // Create temporary canvas for the mask
+            const maskCanvas = document.createElement('canvas');
+            const maskCtx = maskCanvas.getContext('2d');
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+            
+            // Find connected area with similar color
+            const stack = [[startX, startY]];
+            const visited = new Set();
+            const tolerance = 5; // Reduced tolerance since we're working with black/white
+
+            while (stack.length > 0) {
+                const [x, y] = stack.pop();
+                
+                if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height || 
+                    visited.has(`${x},${y}`)) continue;
+
+                const pos = (y * canvas.width + x) * 4;
+const r = currentPixels[pos];
+                const g = currentPixels[pos + 1];
+                const b = currentPixels[pos + 2];
+
+                if (Math.abs(r - startR) <= tolerance &&
+                    Math.abs(g - startG) <= tolerance &&
+                    Math.abs(b - startB) <= tolerance) {
+                    
+                    maskCtx.fillStyle = 'white';
+                    maskCtx.fillRect(x, y, 1, 1);
+                    visited.add(`${x},${y}`);
+                    
+                    stack.push([x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]);
+                }
+            }
+
+            // Create a clipping path from the mask
+            ctx.save();
+            ctx.beginPath();
+            const maskData = maskCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const pos = (y * canvas.width + x) * 4;
+                    if (maskData[pos] > 0) { // If white pixel in mask
+                        ctx.rect(x, y, 1, 1);
+                    }
+                }
+            }
+            ctx.clip();
+
+// Create and apply pattern
+            const pattern = ctx.createPattern(selectedPattern, 'repeat');
+            ctx.fillStyle = pattern;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.restore();
+            
+            showToast('Area filled! Click another area to fill with the same pattern');
+        }
+
+        canvas.addEventListener('click', function(e) {
+            if (!isFillToolActive || !selectedPattern) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+            const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+            
+            floodFill(x, y);
+        });
+
+function deleteImage() {
+            if (!originalImage) {
+                showToast('No image to delete');
+                return;
+            }
+
+            if (confirm('Are you sure you want to delete the current image?')) {
+                // Save state before deleting
+                saveState();
+                
+                // Clear canvas
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Reset variables
+                originalImage = null;
+                selectedPattern = null;
+                isBlackAndWhite = false;
+                isFillToolActive = false;
+                
+                // Reset UI
+                canvas.style.display = 'none';
+                document.querySelector('.upload-placeholder').style.display = 'block';
+                document.querySelectorAll('.patterns li').forEach(li => li.classList.remove('selected'));
+                document.getElementById('fillToolBtn').classList.remove('tool-active');
+                canvas.classList.remove('cursor-fill');
+                
+                showToast('Image deleted successfully');
+            }
+        }
+
+        function saveImage() {
+            if (!originalImage) {
+                showToast('Please upload an image first');
+                return;
+            }
+
+            // Create a temporary canvas for saving
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+
+            // Fill with white background
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            // Draw the current canvas content on top
+            tempCtx.drawImage(canvas, 0, 0);
+
+            // Prompt user for filename
+            let filename = prompt("Enter a filename for your image:", "textile_graphic");
+
+            // If user cancels the prompt, don't proceed
+            if (filename === null) {
+                showToast('Save cancelled');
+                return;
+            }
+
+            // Ensure filename ends with .png
+            if (!filename.toLowerCase().endsWith('.png')) {
+                filename += '.png';
+            }
+
+            try {
+                // Create temporary link element
+                const link = document.createElement('a');
+                
+                // Set href to temporary canvas data URL
+                link.href = tempCanvas.toDataURL('image/png');
+                
+                // Set download attribute with filename
+                link.download = filename;
+                
+                // Append link to body (required for Firefox)
+                document.body.appendChild(link);
+                
+                // Trigger download
+                link.click();
+                
+                // Remove link from document
+                document.body.removeChild(link);
+                
+                showToast('Image saved successfully as ' + filename);
+            } catch (error) {
+                console.error('Error saving the image:', error);
+                showToast('Error saving the image. Please try again');
+            }
+        }
+    </script>
+</body>
+</html>
