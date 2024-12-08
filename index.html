@@ -17,6 +17,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
         }
 
         .container {
@@ -44,7 +45,7 @@
             flex-direction: column;
             gap: 8px;
             padding-right: 5px;
-            height: calc(100% - 50px); /* Account for header */
+            height: calc(100% - 50px); 
         }
 
         .main {
@@ -123,6 +124,10 @@
 
 .cursor-fill {
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="%232196F3" d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.37l-1.34-1.34c-.39-.39-1.02-.39-1.41 0L9 12.25 11.75 15l8.96-8.96c.39-.39.39-1.02 0-1.41z"/></svg>') 0 24, auto;
+        }
+
+        .cursor-draw {
+            cursor: crosshair;
         }
 
         .tool-active {
@@ -275,7 +280,7 @@
             display: none;
         }
 
-        /* Scrollbar styling */
+        
         .patterns ul::-webkit-scrollbar {
             width: 6px;
         }
@@ -311,6 +316,12 @@
                         <i class="fas fa-pencil-alt"></i>
                     </div>
                     <span>Sketch Outline</span>
+                </li>
+                <li onclick="toggleDrawMode()" id="drawToolBtn">
+                    <div class="tool-icon outline-icon">
+                        <i class="fas fa-paint-brush"></i>
+                    </div>
+                    <span>Draw Outline</span>
                 </li>
                 <li onclick="toggleFillTool()" id="fillToolBtn">
                     <div class="tool-icon outline-icon">
@@ -356,9 +367,10 @@
         <div class="patterns">
             <h3>Patterns</h3>
 <ul id="patternList">
-                <li onclick="selectPattern(this, 'stripe.avif')"><img src="stripe.avif" alt="Pattern 1"/><span>Stripe</span></li>
-                <li onclick="selectPattern(this, 'zigzag.jpg')"><img src="zigzag.jpg" alt="Pattern 2"/><span>Zig Zag</span></li>
-                <li onclick="selectPattern(this, 'checkered.jpg')"><img src="checkered.jpg" alt="Pattern 3"/><span>Checkered</span></li>
+                <li onclick="selectPattern(this, 'vertical stripe.jpg')"><img src="vertical stripe.jpg" alt="Pattern 1"/><span>Stripe 1</span></li>
+                <li onclick="selectPattern(this, 'horizontal stripe.webp')"><img src="horizontal stripe.webp" alt="Pattern 2"/><span>Stripe 2</span></li>
+                <li onclick="selectPattern(this, 'zigzag.jpg')"><img src="zigzag.jpg" alt="Pattern 3"/><span>Zig Zag</span></li>
+                <li onclick="selectPattern(this, 'checkered.jpg')"><img src="checkered.jpg" alt="Pattern 4"/><span>Checkered</span></li>
             </ul>
         </div>
 </div>
@@ -371,36 +383,82 @@
             toast.className = 'show';
             setTimeout(() => toast.className = '', 3000);
         }
-        // Previous script content remains exactly the same
+        
 const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 let originalImage = null;
         let isBlackAndWhite = false;
         let selectedPattern = null;
-        let isFillToolActive = false;
+let isFillToolActive = false;
+let isDrawMode = false;
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
         let undoStack = [];
         let redoStack = [];
 
-        // Save current state for undo
+        
         function saveState() {
             undoStack.push(canvas.toDataURL());
-            redoStack = []; // Clear redo stack when new action is performed
+            redoStack = []; 
         }
 
 function undoAction() {
-            if (!originalImage) {
-                showToast('No actions to undo');
-                return;
-            }
-            if (undoStack.length > 0) {
-                redoStack.push(canvas.toDataURL());
-                const previousState = undoStack.pop();
-                loadState(previousState);
-                showToast('Action undone');
-            } else {
-                showToast('Nothing to undo');
-            }
+    if (!originalImage) {
+        showToast('No actions to undo');
+        return;
+    }
+    if (undoStack.length > 0) {
+        redoStack.push(canvas.toDataURL());
+        const previousState = undoStack.pop();
+        loadState(previousState);
+
+        if (undoStack.length === 0) {
+            isBlackAndWhite = false;
         }
+
+        showToast('Action undone');
+    } else {
+function toggleOutline() {
+    if (!originalImage) {
+        showToast('Please upload an image first');
+        return;
+    }
+
+    deactivateAllTools();
+    
+    if (!isBlackAndWhite) {
+        saveState(); 
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+
+        try {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                if (avg < 50) {
+                    data[i] = data[i + 1] = data[i + 2] = 0;
+                } else {
+                    data[i] = data[i + 1] = data[i + 2] = 255;
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            isBlackAndWhite = true;
+            showToast('Outline effect applied');
+        } catch (error) {
+            console.error('Error applying outline effect:', error);
+            showToast('Error applying outline effect. Please try again');
+        }
+    } else {
+        showToast('Outline effect already applied');
+    }
+}
+        showToast('Nothing to undo');
+    }
+}
 
         function redoAction() {
             if (!originalImage) {
@@ -442,15 +500,15 @@ function handleImageUpload(event) {
             reader.onload = function(e) {
                 originalImage = new Image();
                 originalImage.onload = function() {
-                    // Save current state before loading new image
+                    
                     saveState();
                     
                     canvas.width = originalImage.width;
                     canvas.height = originalImage.height;
-                    // Fill white background first
+                    
                     ctx.fillStyle = 'white';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    // Then draw the image
+                    
                     ctx.drawImage(originalImage, 0, 0);
                     canvas.style.display = 'block';
                     document.querySelector('.upload-placeholder').style.display = 'none';
@@ -469,60 +527,64 @@ function handleImageUpload(event) {
             reader.readAsDataURL(file);
         }
 
+function deactivateAllTools() {
+
+    isDrawMode = false;
+    isFillToolActive = false;
+
+    document.getElementById('drawToolBtn').classList.remove('tool-active');
+    document.getElementById('fillToolBtn').classList.remove('tool-active');
+
+    canvas.classList.remove('cursor-fill', 'cursor-draw');
+}
+
 function toggleOutline() {
-            if (!originalImage) {
-                showToast('Please upload an image first');
-                return;
-            }
+    if (!originalImage) {
+        showToast('Please upload an image first');
+        return;
+    }
 
-            // Save current state before applying outline effect
-            saveState();
+    deactivateAllTools();
+    saveState(); 
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
 
-            try {
-                if (isBlackAndWhite) {
-                    // Fill white background first
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    // Then draw the original image
-                    ctx.drawImage(originalImage, 0, 0);
-                    showToast('Original image restored');
+    try {
+        if (!isBlackAndWhite) {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                if (avg < 50) {
+                    data[i] = data[i + 1] = data[i + 2] = 0;
                 } else {
-                    // Fill white background first
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    
-                    for (let i = 0; i < data.length; i += 4) {
-                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                        if (avg < 50) {
-                            data[i] = data[i + 1] = data[i + 2] = 0;
-                        } else {
-                            data[i] = data[i + 1] = data[i + 2] = 255;
-                        }
-                    }
-                    ctx.putImageData(imageData, 0, 0);
-                    showToast('Outline effect applied');
+                    data[i] = data[i + 1] = data[i + 2] = 255;
                 }
-                isBlackAndWhite = !isBlackAndWhite;
-            } catch (error) {
-                console.error('Error applying outline effect:', error);
-                showToast('Error applying outline effect. Please try again');
             }
+            ctx.putImageData(imageData, 0, 0);
+            isBlackAndWhite = true;
+            showToast('Outline effect applied');
+        } else {
+            showToast('Outline effect already applied');
         }
+    } catch (error) {
+        console.error('Error applying outline effect:', error);
+        showToast('Error applying outline effect. Please try again');
+    }
+}
 
 function selectPattern(element, patternUrl) {
             if (!originalImage) {
                 showToast('Please upload an image first');
                 return;
             }
-            // Remove selected class from all patterns
+            
             document.querySelectorAll('.patterns li').forEach(li => li.classList.remove('selected'));
-            // Add selected class to clicked pattern
             element.classList.add('selected');
             
-            // Load the pattern image
+        
             const patternImg = new Image();
             patternImg.onload = function() {
                 selectedPattern = patternImg;
@@ -534,7 +596,7 @@ function selectPattern(element, patternUrl) {
             patternImg.src = patternUrl;
         }
 
-        function toggleFillTool() {
+function toggleFillTool() {
             if (!originalImage) {
                 showToast('Please upload an image first');
                 return;
@@ -544,16 +606,12 @@ function selectPattern(element, patternUrl) {
                 return;
             }
             
-            isFillToolActive = !isFillToolActive;
+            deactivateAllTools();
+            isFillToolActive = true;
             const fillToolBtn = document.getElementById('fillToolBtn');
-            canvas.classList.toggle('cursor-fill');
-            fillToolBtn.classList.toggle('tool-active');
-            
-            if (isFillToolActive) {
-                showToast('Pattern Fill tool activated. Click on an area to fill it');
-            } else {
-                showToast('Pattern Fill tool deactivated. Select a new pattern to continue filling');
-            }
+            canvas.classList.add('cursor-fill');
+            fillToolBtn.classList.add('tool-active');
+            showToast('Pattern Fill tool activated. Click on an area to fill it');
         }
 
 function floodFill(startX, startY) {
@@ -562,19 +620,16 @@ function floodFill(startX, startY) {
                 return;
             }
 
-            // Save current state before filling
             saveState();
             showToast('Filling area with pattern...');
 
-            // Create a temporary canvas to store original image data
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
             
-            // Draw the original black and white image
+            
             if (!isBlackAndWhite) {
-                // Convert to black and white first
                 tempCtx.drawImage(originalImage, 0, 0);
                 const tempImageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height);
                 const tempData = tempImageData.data;
@@ -587,27 +642,23 @@ function floodFill(startX, startY) {
                 tempCtx.drawImage(canvas, 0, 0);
             }
             
-// Get the current canvas state for comparison
             const currentState = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const currentPixels = currentState.data;
             
-            // Get color from the black and white version for filling
             const originalPixels = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
             const startPos = (startY * canvas.width + startX) * 4;
             const startR = currentPixels[startPos];
             const startG = currentPixels[startPos + 1];
             const startB = currentPixels[startPos + 2];
             
-            // Create temporary canvas for the mask
             const maskCanvas = document.createElement('canvas');
             const maskCtx = maskCanvas.getContext('2d');
             maskCanvas.width = canvas.width;
             maskCanvas.height = canvas.height;
             
-            // Find connected area with similar color
             const stack = [[startX, startY]];
             const visited = new Set();
-            const tolerance = 5; // Reduced tolerance since we're working with black/white
+            const tolerance = 5; 
 
             while (stack.length > 0) {
                 const [x, y] = stack.pop();
@@ -632,21 +683,19 @@ const r = currentPixels[pos];
                 }
             }
 
-            // Create a clipping path from the mask
             ctx.save();
             ctx.beginPath();
             const maskData = maskCtx.getImageData(0, 0, canvas.width, canvas.height).data;
             for (let y = 0; y < canvas.height; y++) {
                 for (let x = 0; x < canvas.width; x++) {
                     const pos = (y * canvas.width + x) * 4;
-                    if (maskData[pos] > 0) { // If white pixel in mask
+                    if (maskData[pos] > 0) { 
                         ctx.rect(x, y, 1, 1);
                     }
                 }
             }
             ctx.clip();
 
-// Create and apply pattern
             const pattern = ctx.createPattern(selectedPattern, 'repeat');
             ctx.fillStyle = pattern;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -655,6 +704,58 @@ const r = currentPixels[pos];
             
             showToast('Area filled! Click another area to fill with the same pattern');
         }
+
+function toggleDrawMode() {
+            if (!originalImage) {
+                showToast('Please upload an image first');
+                return;
+            }
+            
+            deactivateAllTools();
+            isDrawMode = true;
+            const drawToolBtn = document.getElementById('drawToolBtn');
+            
+            canvas.classList.add('cursor-draw');
+            drawToolBtn.classList.add('tool-active');
+            showToast('Draw mode activated. Click and drag to draw');
+        }
+
+        canvas.addEventListener('mousedown', function(e) {
+            if (isDrawMode) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                lastY = (e.clientY - rect.top) * (canvas.height / rect.height);
+                saveState();
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDrawMode && isDrawing) {
+                const rect = canvas.getBoundingClientRect();
+                const currentX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const currentY = (e.clientY - rect.top) * (canvas.height / rect.height);
+                
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(currentX, currentY);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                
+                lastX = currentX;
+                lastY = currentY;
+            }
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            isDrawing = false;
+        });
 
         canvas.addEventListener('click', function(e) {
             if (!isFillToolActive || !selectedPattern) return;
@@ -673,20 +774,16 @@ function deleteImage() {
             }
 
             if (confirm('Are you sure you want to delete the current image?')) {
-                // Save state before deleting
                 saveState();
                 
-                // Clear canvas
                 ctx.fillStyle = 'white';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Reset variables
                 originalImage = null;
                 selectedPattern = null;
                 isBlackAndWhite = false;
                 isFillToolActive = false;
                 
-                // Reset UI
                 canvas.style.display = 'none';
                 document.querySelector('.upload-placeholder').style.display = 'block';
                 document.querySelectorAll('.patterns li').forEach(li => li.classList.remove('selected'));
@@ -703,50 +800,38 @@ function deleteImage() {
                 return;
             }
 
-            // Create a temporary canvas for saving
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
 
-            // Fill with white background
             tempCtx.fillStyle = 'white';
             tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-            // Draw the current canvas content on top
             tempCtx.drawImage(canvas, 0, 0);
 
-            // Prompt user for filename
             let filename = prompt("Enter a filename for your image:", "textile_graphic");
 
-            // If user cancels the prompt, don't proceed
             if (filename === null) {
                 showToast('Save cancelled');
                 return;
             }
 
-            // Ensure filename ends with .png
             if (!filename.toLowerCase().endsWith('.png')) {
                 filename += '.png';
             }
 
             try {
-                // Create temporary link element
                 const link = document.createElement('a');
                 
-                // Set href to temporary canvas data URL
                 link.href = tempCanvas.toDataURL('image/png');
                 
-                // Set download attribute with filename
                 link.download = filename;
                 
-                // Append link to body (required for Firefox)
                 document.body.appendChild(link);
                 
-                // Trigger download
                 link.click();
                 
-                // Remove link from document
                 document.body.removeChild(link);
                 
                 showToast('Image saved successfully as ' + filename);
@@ -758,3 +843,4 @@ function deleteImage() {
     </script>
 </body>
 </html>
+
